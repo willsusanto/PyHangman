@@ -60,8 +60,16 @@ def readWordFile():
     else:
         return False
 
-def getWord(listForWord):
-    return random.choice(listForWord).upper()
+def getWord(listForWord, wordsPlayed):
+    returnWord = ''
+
+    # If all words played already
+    if len(listForWord) == len(wordsPlayed):
+        wordsPlayed.clear()  
+    while True:
+        returnWord = random.choice(listForWord).upper()
+        if returnWord not in wordsPlayed:
+            return returnWord
 
 def gameOver():
     gameOverText = overFont.render('Game Over!', 1, (0,0,0))
@@ -88,7 +96,26 @@ def gameOver():
         win.blit(descText, descRect)
         pygame.display.update()
 
-def drawWindow(wordDisplay, tries, guessed_word):
+def correct():
+    correctText = wordFont.render('Correct! Score +1', 1, (255,255,255))
+    textRect = correctText.get_rect()
+    textRect.center = (screenWidth//2, screenHeight//2 + 250)
+
+    pausing = True
+    while (pausing):
+        clock.tick(FPS)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                return True
+        
+        #win.fill((211, 211, 211))
+        win.blit(correctText, textRect)
+        pygame.display.update()
+
+def drawWindow(wordDisplay, tries, guessed_word, score, guessed):
     #Background
     win.fill((0,0,0))
 
@@ -105,6 +132,17 @@ def drawWindow(wordDisplay, tries, guessed_word):
     for index, letter in enumerate(wordDisplay):
         text = wordFont.render(letter, 1, (255, 255, 255))
         win.blit(text, (430 + (index*50), 250)) #Make some space for x
+
+    #Scores
+    scoreText = wordFont.render('Score : ' + str(score), 1, (255,255,255))
+    textRect = scoreText.get_rect()
+    textRect.center = (screenWidth - 120, 50)
+    win.blit(scoreText, textRect)
+
+    #Show message
+    if guessed:
+        correct() 
+
     pygame.display.update()
 
 # Initialize variables
@@ -116,6 +154,7 @@ for i in range(26):
         buttons.append(button(65 + (70*i), 370, chr(65+i)))
 
 # Initialize words from file to a list first
+wordsPlayed = []
 wordList = readWordFile()
 FPS = 30
 
@@ -139,21 +178,23 @@ if not wordList:
 else:
     # All words in uppercase
     run = True
-    stock_word = getWord(wordList)
+    stock_word = getWord(wordList, wordsPlayed)
     print(stock_word)
     guessed_word = []
     display_word = "_" * len(stock_word)
     tries = 0
     guessed = False
+    score = 0
 
     while (run):
         clock.tick(FPS)
 
         if tries >= 6:
             guessed = gameOver()
+            score = 0
 
         if guessed:
-            stock_word = getWord(wordList)
+            stock_word = getWord(wordList, wordsPlayed)
             print(stock_word)
             display_word = "_" * len(stock_word)
             tries = 0
@@ -181,8 +222,10 @@ else:
 
         if display_word == stock_word:
             guessed = True
+            score += 1
+            wordsPlayed.append(stock_word)
 
-        drawWindow(display_word, tries, guessed_word)
+        drawWindow(display_word, tries, guessed_word, score, guessed)
 
 
         
